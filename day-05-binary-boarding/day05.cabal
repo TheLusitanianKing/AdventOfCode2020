@@ -1,0 +1,11 @@
+cabal-version:       >= 1.10
+name:                day05
+version:             0.1.0.0
+author:              The Lusitanian King
+build-type:          Simple
+
+executable day05
+  main-is:             Main.hs
+  other-modules:       Boarding
+  build-depends:       base >= 4.13 && < 4.14
+  default-language:    Haskell2010

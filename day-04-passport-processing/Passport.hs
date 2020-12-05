@@ -45,24 +45,24 @@ transformP :: String -> String -> Passport -> Passport
 transformP field value p = case field of
     "byr" -> maybe p f (readMaybe value :: Maybe Int)
              where f x | x >= 1920 && x <= 2002 = p { byr = Just x }
-                   f x | otherwise              = p
+                       | otherwise              = p
     "iyr" -> maybe p f (readMaybe value :: Maybe Int)
              where f x | x >= 2010 && x <= 2020 = p { iyr = Just x }
-                   f x | otherwise              = p
+                       | otherwise              = p
     "eyr" -> maybe p f (readMaybe value :: Maybe Int)
              where f x | x >= 2020 && x <= 2030 = p { eyr = Just x }
-                   f x | otherwise              = p
+                       | otherwise              = p
     "hgt" ->
         let match = value =~ "(\\d+)(in|cm)" :: (String, String, String, [String]) in
         case match of 
             (_, _, r, n:"in":_) | null r ->
                 maybe p f (readMaybe n :: Maybe Int)
                 where f x | x >= 59 && x <= 76 = p { hgt = Just value }
-                      f x | otherwise          = p
+                          | otherwise          = p
             (_, _, r, n:"cm":_) | null r ->
                 maybe p f (readMaybe n :: Maybe Int)
                 where f x | x >= 150 && x <= 193 = p { hgt = Just value }
-                      f x | otherwise            = p
+                          | otherwise            = p
             _ -> p
     "hcl" ->
         let match = value =~ "(#[a-f0-9]{6})" :: (String, String, String, [String]) in

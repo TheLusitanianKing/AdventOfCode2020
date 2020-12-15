@@ -1,0 +1,14 @@
+cabal-version:       >= 1.10
+name:                day14
+version:             0.1.0.0
+author:              The Lusitanian King+
+build-type:          Simple
+
+executable day14
+  main-is:             Main.hs
+  other-modules:       Docking
+  build-depends:       base >= 4.13 && < 4.14,
+                       containers >= 0.6.2,
+                       regex-pcre >= 0.95
+  hs-source-dirs:      src
+  default-language:    Haskell2010

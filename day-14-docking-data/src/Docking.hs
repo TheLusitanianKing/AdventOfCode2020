@@ -40,7 +40,7 @@ maskedValue mask n = fromBinaryToInt $ doMasking (reverse binN) (reverse mask) [
 
 -- from a mask, a target address, gives all the target addresses
 targetedAddresses :: String -> Integer -> [Integer]
-targetedAddresses mask addr = map (fromBinaryToInt) $ doMasking (reverse binAddr) (reverse mask) []
+targetedAddresses mask addr = map fromBinaryToInt $ doMasking (reverse binAddr) (reverse mask) []
     where binAddr = showIntAtBase 2 intToDigit addr ""
           doMasking []       []       acc = [acc]
           doMasking _        []       _   = error "Mask is smaller than the value.."
@@ -54,7 +54,7 @@ targetedAddresses mask addr = map (fromBinaryToInt) $ doMasking (reverse binAddr
 
 -- common pattern for executing instruction piles
 execute :: (M.Map Integer Integer -> Integer -> Integer -> String -> M.Map Integer Integer) -> [Instruction] -> Integer
-execute f is = foldl1 (+) $ doExecute is [] M.empty
+execute f is = sum $ doExecute is [] M.empty
     where doExecute []     _    m = m
           doExecute (x:xs) mask m = case x of
               Mask m'              -> doExecute xs m' m

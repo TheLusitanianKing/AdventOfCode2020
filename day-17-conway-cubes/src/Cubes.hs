@@ -1,6 +1,6 @@
 module Cubes where
 
-import Data.List (nub)
+import Data.List ((\\), nub)
 import Data.Maybe (mapMaybe)
 
 type Coordinate = [Int]
@@ -17,15 +17,9 @@ parseFile dimension path = parse . lines <$> readFile path
 
 -- from a coordinate, gives all coordinates that can be considered neighbours
 neighboursCoordinates :: Coordinate -> [Coordinate]
-neighboursCoordinates (x:y:z:[]) =
-    map (\(a, b, c) -> [a, b, c])
-    [(x', y', z') | x' <- [(x-1)..(x+1)], y' <- [(y-1)..(y+1)], z' <- [(z-1)..(z+1)], (x,y,z) /= (x', y', z')]
-neighboursCoordinates (x:y:z:w:[]) =
-    map (\(a, b, c, d) -> [a, b, c, d])
-    [(x', y', z', w') |
-    x' <- [(x-1)..(x+1)], y' <- [(y-1)..(y+1)], z' <- [(z-1)..(z+1)], w' <- [(w-1)..(w+1)],
-    (x,y,z,w) /= (x', y', z', w')]
--- TODO: find a better way to do this for all dimensions
+neighboursCoordinates c = doNeighbours c \\ [c]
+    where doNeighbours []     = [[]]
+          doNeighbours (x:xs) = [ x':xs' | x' <- [x-1..x+1], xs' <- doNeighbours xs]
 
 -- from a coordinate and a list of coordinates where there is an active cube, gives active neighbour cubes
 activeNeighbours :: Coordinate -> [Coordinate] -> [Coordinate]

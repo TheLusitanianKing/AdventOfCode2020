@@ -5,11 +5,17 @@ import qualified Language.Haskell.Interpreter as Hint
 import Operation (multipl, plus)
 
 parseFile :: FilePath -> IO [String]
-parseFile path = map replaceOps . lines <$> readFile path
+parseFile path = lines <$> readFile path
 
+-- part 1
 replaceOps :: String -> String
 replaceOps = replace "*" "`multipl`" . replace "+" "`plus`"
 
+-- part 2
+replaceOps' :: String -> String
+replaceOps' = replace "*" "`multipl'`" . replace "+" "`plus'`"
+
+-- evaluating a string to its value (crashes an error if it didn't succeed for any reason)
 evaluateOp :: String -> IO Integer
 evaluateOp s = do
     i <- Hint.runInterpreter $ do

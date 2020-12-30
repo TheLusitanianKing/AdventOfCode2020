@@ -23,5 +23,5 @@ evaluateOp s = do
         Hint.setImports ["Prelude", "Operation"]
         Hint.eval s
     case i of
-        Left _ -> error "..."
+        Left _ -> error $ "Could not evaluate this expression: " ++ s
         Right r -> return (read r)

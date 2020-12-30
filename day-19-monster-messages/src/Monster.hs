@@ -1,4 +1,8 @@
-module Monster where
+module Monster (
+    combinations,
+    matchSet',
+    parse
+) where
 
 import Data.List.Split (splitOn)
 
@@ -28,9 +32,9 @@ parseRule s = Rule id dt
 getRuleNumber :: Int -> [Rule] -> RuleData
 getRuleNumber n = head . map (\(Rule id d) -> d) . filter (\(Rule id _) -> id == n)
 
--- from a list of finite rules, get all the possible combinations (starting at rule 0)
-combinations :: [Rule] -> [String]
-combinations rs = getCombinations $ getRuleNumber 0 rs
+-- from a list of finite rules, get all the possible combinations (starting at rule n)
+combinations :: [Rule] -> Int -> [String]
+combinations rs n = getCombinations $ getRuleNumber n rs
     where getCombinations (Value s)     = [s]
           getCombinations (Union i1 i2) = getCombinations (Inter i1) ++ getCombinations (Inter i2)
           getCombinations (Inter xs)    = map concat . combine . map (\x -> getCombinations $ getRuleNumber x rs) $ xs
@@ -38,3 +42,19 @@ combinations rs = getCombinations $ getRuleNumber 0 rs
           -- e.g. [["a"], ["ba", "ab"]] -> [["a","ba"],["a","ab"]]
           combine []     = [[]]
           combine (x:xs) = [ x':xs' | x' <- x, xs' <- combine xs]
+
+-- handle special cases
+-- from a string and a list of combinations, as long as we match the beginning of the string with a combination we remove it and go on
+-- at the end we return the rest of the unmatched string, how many times it has matched and if it has matched at least the given number
+matchSet :: String -> [String] -> Int -> (String, Bool, Int)
+matchSet s cs atLeast = helper 0 s
+    where l = length . head $ cs -- we know they always have the same size and the list can't be empty
+          helper n ss | take l ss `elem` cs = helper (n+1) (drop l ss)
+                      | otherwise          = (ss, n >= atLeast, n)
+
+-- here we double the match, prefixes combinations then suffixes, should match the entire string
+-- and have matched at least one more time prefixes than suffixes
+matchSet' :: String -> [String] -> [String] -> Bool
+matchSet' s prefix suffix = null rest' && b && b' && np > ns
+    where (rest, b, np)   = matchSet s prefix 2
+          (rest', b', ns) = matchSet rest suffix 1

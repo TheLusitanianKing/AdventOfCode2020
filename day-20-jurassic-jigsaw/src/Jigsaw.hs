@@ -1,25 +1,18 @@
 module Jigsaw where
 
 import Data.Char (isAlpha, isNumber, isSpace)
-import Data.List (transpose)
+import Data.List (groupBy, sortBy, transpose)
 import Data.List.Split (splitOn)
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as M
-import Data.Array (Array)
-import qualified Data.Array as A
 
-type ID = Int
-type Tile = [[Char]]
-type TileMap = Map ID Tile          -- ^ map of all the available tiles
-type Jigsaw = Array (Int, Int) (Int, Tile) -- ^ the jigsaw puzzle
+type Tile = [[Bool]]
 
 -- | Parsing the input to a tilemap
-parseFile :: FilePath -> IO TileMap
-parseFile path = M.fromList . map parseTile . splitOn [[]] . lines <$> readFile path
+parseFile :: FilePath -> IO [(Int, Tile)]
+parseFile path = map parseTile . splitOn [[]] . lines <$> readFile path
 
 -- | Parsing a tile from a list of string (no failure management)
 parseTile :: [String] -> (Int, Tile)
-parseTile (header:tile) = (tileId, tile)
+parseTile (header:tile) = (tileId, map (map (=='#')) tile)
     where tileId = read . takeWhile isNumber . dropWhile isSpace . dropWhile isAlpha $ header
 
 -- | Flip vertically
@@ -37,34 +30,21 @@ tileValues = apply [] functions
           apply acc []     _ = acc
           apply acc (f:fs) t = apply (t':acc) fs t' where t' = f t
 
--- | From a tile, get one of its borders
-data Border = BorderRight | BorderTop | BorderLeft | BorderBottom
-              deriving (Enum, Eq, Show)
+-- | From a tile, get the 8 possible edge value (4 * 2)
+edges :: Tile -> [Int]
+edges t = map (edgeToInt . head) (tileValues t)
+    where edgeToInt :: [Bool] -> Int
+          edgeToInt = foldl (\a b -> a * 2 + (if b then 1 else 0)) 0
 
-border :: Border -> Tile -> [Char]
-border BorderRight  = map last
-border BorderTop    = head
-border BorderLeft   = map head
-border BorderBottom = last
-
--- | From a tile A and a tile B and a given border of the tile A
--- check if the tile B combines at the opposite border
-combineBorder :: Border -> Tile -> Tile -> Bool
-combineBorder b t1 t2 = border b t1 == border b' t2
-    where b' = toEnum $ (fromEnum b - 2) `mod` 4 -- if left then right, if top then bottom and so on
-
--- | From a tile A and a tile B, check if they combine at one or multiple borders
-combine :: Tile -> Tile -> [Border]
-combine t1 t2 = filter (\b -> combineBorder b t1 t2) borders
-    where borders = [BorderRight ..]
-
--- | Helper function to pretty print a tile
-prettyPrintTile :: Tile -> IO ()
-prettyPrintTile []     = return ()
-prettyPrintTile (r:rs) = putStrLn r >> prettyPrintTile rs
-
--- | From a map of tiles, create a empty jigsaw
--- Only works with tile maps that have a perfect square number of tiles (1, 4, 9, 16 and so on..)
-emptyJigsawFromTileMap :: TileMap -> Jigsaw
-emptyJigsawFromTileMap tm = A.listArray ((0, 0), (n-1, n-1)) (repeat (0, []))
-    where n = round $ sqrt (fromIntegral $ length tm)
+-- | From a list of tile (ID and content), get its 8 possible edges
+-- Then, filter the uniques edges and finally get the corner tiles (return list of the corner tiles ID)
+cornerTiles :: [(Int, Tile)] -> [Int]
+cornerTiles = map (fst . head) -- we keep only the ID of the tile with unique edges
+            . filter ((==4) . length) -- only corner edges will have 4 unique edges : 2 edges * 2 (flipped)
+            . groupBy (\(a, _) (a', _) -> a == a') -- group by ID
+            . sortBy (\(a, _) (a', _) -> compare a a') -- sort by ID
+            . concat
+            . filter ((==1) . length) -- get unique edges
+            . groupBy (\(_, b) (_, b') -> b == b') -- group by edge
+            . sortBy (\(_, b) (_, b') -> compare b b') -- sort by edge
+            . concatMap (\(i, ts) -> map (\e -> (i, e)) $ edges ts) -- all edges of all tiles [(ID, [Edges..])]

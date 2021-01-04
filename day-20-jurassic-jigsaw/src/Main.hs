@@ -1,8 +1,8 @@
 module Main where
 
-import Jigsaw
+import Jigsaw (cornerTiles, parseFile)
 
 main :: IO ()
 main = do
-    tm <- parseFile "test.txt"
-    print . length $ tm
+    tm <- parseFile "input.txt"
+    putStrLn . ("part 1: " ++) . show . product . cornerTiles $ tm

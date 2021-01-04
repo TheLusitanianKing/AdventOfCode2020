@@ -11,5 +11,5 @@ main = do
         Just (ts, bus) ->
             putStrLn . ("part 1: " ++) . show . quickestDeparture ts $ bus
     -- part 2
-    sequence <- parseFile' "input.txt"
+    sequence <- parseFile' "test.txt"
     putStrLn . ("part 2: " ++) . show . sequenceT 0 $ sequence

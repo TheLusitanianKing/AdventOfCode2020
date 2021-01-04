@@ -1,10 +1,10 @@
 module Shuttle where
 
-import Data.List (union)
 import Data.List.Split (splitOn)
-import Data.Maybe (catMaybes, fromJust, mapMaybe)
+import Data.Maybe (catMaybes, mapMaybe)
 import Text.Read (readMaybe)
 
+-- | Parsing for part 1
 parseFile :: FilePath -> IO (Maybe (Int, [Int]))
 parseFile path = do
     content <- readFile path
@@ -16,20 +16,7 @@ parseFile path = do
 parseBus :: String -> [Int]
 parseBus = mapMaybe ((readMaybe :: String -> Maybe Int) . filter (/= 'x')) . splitOn ","
 
--- from a bus number, a timestamp T, get its first departure after T
-departureAfterT :: Int -> Int -> Int
-departureAfterT b t = head [ x | x <- [t..], x `rem` b == 0 ]
-
--- from a timestamp, a list of bus, get the bus w/ quickest departure multiplied by the time to wait
-quickestDeparture :: Int -> [Int] -> Int
-quickestDeparture t bs =
-    let (bus, departure) = foldl1 fusion (map (\b -> (b, departureAfterT b t)) bs)
-        fusion (b1, d1) (b2, d2)
-            | d1 <= d2  = (b1, d1)
-            | otherwise = (b2, d2)
-    in bus * (departure - t)
-
--- part 2, we need the information about the 'X' this time
+-- | Part 2, we need the information about the 'X' this time
 parseFile' :: FilePath -> IO [Maybe Integer]
 parseFile' path = do
     content <- readFile path
@@ -38,19 +25,24 @@ parseFile' path = do
 parseBus' :: String -> [Maybe Integer]
 parseBus' = map (readMaybe :: String -> Maybe Integer) . splitOn ","
 
--- from a initial timestamp, a sequence, get the first timestamp that have this sequence
--- TODO: adapt to Integer as t will be over Int limit for the full example
+-- | From a timestamp, a list of bus, get the bus w/ quickest departure multiplied by the time to wait
+quickestDeparture :: Int -> [Int] -> Int
+quickestDeparture t bs = busNumber * waitingTime
+    where nextDepartures           = map (\b -> (b - (t `rem` b), b)) bs
+            -- conveniently placed bus ID at the second place in the tuple to make the minimum function works how I want
+          (busNumber, waitingTime) = minimum nextDepartures
+
+-- | From a initial timestamp, a sequence, get the first timestamp that have this sequence
 sequenceT :: Integer -> [Maybe Integer] -> Integer
 sequenceT t seq = doSequence t seq (catMaybes seq)
-    where doSequence t seq bs | haveFullSeq   = t
-                              | otherwise     =
-                                    if t `rem` incr == 0
-                                    then doSequence (t+incr) seq bs
-                                    else doSequence (t+1) seq bs
-                                where (x, haveFullSeq) = haveSeq t bs seq
-                                      incr = product (take (fromIntegral x) bs)
+    where doSequence t seq bs
+            | haveFullSeq = t
+            | otherwise   = doSequence t' seq bs
+                where t' = if t `rem` incr == 0 then t+incr else t+1
+                      (x, haveFullSeq) = haveSeq t bs seq
+                      incr = product (take (fromIntegral x) bs)
 
--- from a timestamp, a sequence, check if the sequence is respected at the given timestamp
+-- | From a timestamp, a sequence, check if the sequence is respected at the given timestamp
 haveSeq :: Integer -> [Integer] -> [Maybe Integer] -> (Integer, Bool)
 haveSeq t bs seq = doHaveSeq 0 t bs seq
       where doHaveSeq n _ _ []      = (n, True)
